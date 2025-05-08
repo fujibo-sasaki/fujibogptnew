@@ -179,7 +179,7 @@ export const CreateChatThread = async () => {
     isDeleted: false,
     chatType: "simple",
     conversationStyle: "balanced",
-    chatAPIModel: "GPT-3",
+    chatAPIModel: "Current_Version",
     type: CHAT_THREAD_ATTRIBUTE,
     chatOverFileName: "",
     chatDoc: ""

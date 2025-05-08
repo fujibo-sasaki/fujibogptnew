@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@azure/core-auth": "^1.9.0",
+    "@azure/openai": "^2.0.0",
+    "@azure/search-documents": "^12.1.0",
+    "ai": "^4.1.54",
+    "openai": "^4.86.2"
+  }
+}

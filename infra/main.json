@@ -54,11 +54,11 @@
     },
     "chatGptDeploymentName": {
       "type": "string",
-      "defaultValue": "chat-gpt-35-turbo"
+      "defaultValue": "chat-Current_Version5-turbo"
     },
     "chatGptModelName": {
       "type": "string",
-      "defaultValue": "gpt-35-turbo"
+      "defaultValue": "Current_Version5-turbo"
     },
     "chatGptModelVersion": {
       "type": "string",
@@ -211,11 +211,11 @@
             },
             "chatGptDeploymentName": {
               "type": "string",
-              "defaultValue": "chat-gpt-35-turbo"
+              "defaultValue": "chat-Current_Version5-turbo"
             },
             "chatGptModelName": {
               "type": "string",
-              "defaultValue": "chat-gpt-35-turbo"
+              "defaultValue": "chat-Current_Version5-turbo"
             },
             "chatGptModelVersion": {
               "type": "string",

@@ -1,4 +1,4 @@
-// File: /Users/okamotonobuhiro/fujibo-20241025/azurechat-main-Fujibo/src/app/api/auth/[...nextauth]/route.ts
+// File: /Users/okamotonobuhiro/fujibo2025/test/src/app/api/auth/[...nextauth]/route.ts
 import * as entry from '../../../../../../app/api/auth/[...nextauth]/route.js'
 import type { NextRequest } from 'next/server.js'
 

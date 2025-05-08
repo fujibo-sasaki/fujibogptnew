@@ -18,9 +18,9 @@ export interface ChatMessageModel {
 
 export type ConversationStyle = "creative" | "balanced" | "precise";
 export type ChatType = "simple" | "web" | "document" | "data" | "doc" | "mssql";
-export type ChatAPIModel = "GPT-3" | "GPT-4";
+export type ChatAPIModel = "Current_Version" | "Preview_Version";
 export type ChatDoc = "DeptA" | "DeptB" | "DeptC" | "DeptD" | "";
-
+export type ChatAuth = "Excective" | "Manager" | "Employee" | "Contract";
 export type ChatRole = "system" | "user" | "assistant" | "function";
 
 export interface ChatThreadModel {

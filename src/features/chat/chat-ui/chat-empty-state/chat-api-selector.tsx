@@ -20,14 +20,14 @@ export const ChatAPISelector: FC<Prop> = (props) => {
   
   const { data: session } = useSession();
 
-  const [checked, setChecked] = useState(chatBody.chatAPIModel === "GPT-3" ? false : true);
+  const [checked, setChecked] = useState(chatBody.chatAPIModel === "Current_Version" ? false : true);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
     if (checked) {
-      onChatAPIModelChange("GPT-3" as ChatAPIModel);
+      onChatAPIModelChange("Current_Version" as ChatAPIModel);
     }else{
-      onChatAPIModelChange("GPT-4" as ChatAPIModel);
+      onChatAPIModelChange("Preview_Version" as ChatAPIModel);
     }
    
     };

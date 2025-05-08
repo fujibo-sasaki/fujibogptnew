@@ -1,4 +1,4 @@
-// File: /Users/okamotonobuhiro/fujibo-20241025/azurechat-main-Fujibo/src/app/chat/page.tsx
+// File: /Users/okamotonobuhiro/fujibo2025/test/src/app/chat/page.tsx
 import * as entry from '../../../../app/chat/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
