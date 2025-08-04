@@ -3,13 +3,10 @@ import { OpenAIInstance } from "@/features/common/openai";
 import { OpenAIStream, StreamingTextResponse } from "ai";
 import { initAndGuardChatSession } from "./chat-thread-service";
 import { CosmosDBChatMessageHistory } from "./cosmosdb/cosmosdb";
-import { BingSearchResult } from "./Azure-bing-search/bing";
+import { BingAIProjectsSearchResult } from "./Azure-bing-search/bing-ai-projects";
 import { PromptGPTProps } from "./models";
-import puppeteer, { Browser } from "puppeteer";
 
 export const ChatAPIWeb = async (props: PromptGPTProps) => {
-  let browser: Browser | undefined;
-  
   try {
     // Destructure and initialize variables
     const { lastHumanMessage, chatThread } = await initAndGuardChatSession(props);
@@ -55,131 +52,49 @@ export const ChatAPIWeb = async (props: PromptGPTProps) => {
     const searchQuery = searchQueryResponse.choices[0]?.message?.content || lastHumanMessage.content;
     console.log('Generated search query:', searchQuery);
 
-    // Initialize Bing Search with error handling
-    const bing = new BingSearchResult();
+    // Initialize Bing AI Projects Search with error handling
+    console.log('\n=== WEB SEARCH DEBUG START ===');
+    console.log(`Search Query: ${searchQuery}`);
+    console.log('Creating BingAIProjectsSearchResult instance...');
+    
+    const bingAIProjects = new BingAIProjectsSearchResult();
     let webSearchContent = '';
+    let citations: Array<{title: string; url: string; snippet?: string; domain?: string}> = [];
+    let searchResults: Array<{title: string; url: string; snippet: string; domain: string}> = [];
 
     try {
-      const searchResult = await bing.SearchWeb(searchQuery);
+      console.log('Calling bingAIProjects.SearchWeb...');
+      const searchResult = await bingAIProjects.SearchWeb(searchQuery);
       
-      if (searchResult?.webPages?.value) {
-        // Initialize browser only if we have search results
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-extensions'
-          ],
-          ignoreHTTPSErrors: true,
-          timeout: 30000
-        });
-
-        // Process web pages
-        const webPageContents = await Promise.all(
-          searchResult.webPages.value.slice(0, 5).map(async (page: any) => {
-            let pageInstance = null;
-            try {
-              if (!browser) {
-                throw new Error('Browser instance not initialized');
-              }
-              
-              pageInstance = await browser.newPage();
-              await pageInstance.setDefaultNavigationTimeout(15000);
-              
-              await pageInstance.setViewport({
-                width: 1280,
-                height: 800
-              });
-
-              const response = await pageInstance.goto(page.url, {
-                waitUntil: 'domcontentloaded',
-                timeout: 15000
-              });
-
-              if (!response || !response.ok()) {
-                throw new Error(`Failed to load page: ${page.url}`);
-              }
-
-              const pageText = await pageInstance.evaluate(() => {
-                const removeElements = (selector: string) => {
-                  document.querySelectorAll(selector).forEach(el => el.remove());
-                };
-
-                ['script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript'].forEach(removeElements);
-
-                const contentSelectors = [
-                  'main',
-                  'article',
-                  '[role="main"]',
-                  '#main-content',
-                  '.main-content',
-                  '.content',
-                  'body'
-                ];
-
-                for (const selector of contentSelectors) {
-                  const element = document.querySelector(selector);
-                  if (element?.textContent?.trim()) {
-                    return element.textContent.trim();
-                  }
-                }
-
-                return document.body.textContent?.trim() || '';
-              });
-
-              const cleanUrl = new URL(page.url).toString();
-              return {
-                url: cleanUrl,
-                title: page.name || '',
-                snippet: page.snippet || '',
-                content: (pageText || '').substring(0, 2000)
-              };
-            } catch (error) {
-              console.error(`Error scraping ${page.url}:`, error);
-              return {
-                url: page.url,
-                title: page.name || '',
-                snippet: page.snippet || '',
-                content: page.snippet || ''
-              };
-            } finally {
-              if (pageInstance) {
-                await pageInstance.close().catch(console.error);
-              }
-            }
-          })
-        );
-
-        // Format web search content if we have results
+      if (searchResult.answer) {
+        // Agentのレスポンスをそのまま使用し、重複する情報を避ける
         webSearchContent = `
-使用した検索クエリ: "${searchQuery}"
+使用した検索クエリ: "${searchResult.searchQuery}"
 
-Web検索結果の概要:
-${webPageContents.map(page => `
-タイトル: ${page.title}
-URL: [${page.url}](${page.url})
-スニペット: ${page.snippet}
-
-詳細コンテンツ抜粋:
-${page.content}
-`).join("\n\n")}`;
+Bing AI Projects Agent検索結果:
+${searchResult.answer}`;
+        
+        citations = searchResult.citations || [];
+        searchResults = searchResult.searchResults || [];
       }
     } catch (error) {
-      console.warn('Web search failed:', error);
-      webSearchContent = '\nWeb検索結果はありませんでした。既存の知識ベースに基づいて回答いたします。';
+      console.error('Bing AI Projects search failed:', error);
+      webSearchContent = `
+Web検索でエラーが発生しました。既存の知識ベースに基づいて回答いたします。
+
+エラー詳細: ${error instanceof Error ? error.message : 'Unknown error'}
+
+環境変数の設定を確認してください:
+- AZURE_BING_PROJECT_URL: ${process.env.AZURE_BING_PROJECT_URL ? `設定済み (${process.env.AZURE_BING_PROJECT_URL})` : '未設定'}
+- AZURE_BING_ASSISTANT_ID: ${process.env.AZURE_BING_ASSISTANT_ID ? `設定済み (${process.env.AZURE_BING_ASSISTANT_ID})` : '未設定'}
+`;
     }
 
     // Add user message to chat history
     await chatHistory.addMessage({
       content: lastHumanMessage.content,
       role: "user"
-    });
+    } as any);
 
     // Construct prompt
     const prompt = `
@@ -190,13 +105,17 @@ ${topHistory.map(msg => `${msg.role}: ${msg.content}`).join("\n")}
 
 ${webSearchContent}
 
-上記の会話の文脈${webSearchContent ? 'と検索結果' : ''}を踏まえて、最新の質問に対して包括的かつ情報豊富な回答を生成してください。
-${webSearchContent ? `
-以下の形式でMarkdown形式の参考文献リストを必ず含めてください:
+上記の会話の文脈${webSearchContent ? 'とAgent検索結果' : ''}を踏まえて、最新の質問に対して包括的かつ情報豊富な回答を生成してください。
 
+Agentのレスポンスに既にURLや参考文献が含まれている場合は、重複して追加しないでください。
+AgentのレスポンスにURLや参考文献が含まれていない場合のみ、以下の形式でMarkdown形式のリストを追加してください：
+
+${citations.length > 0 || searchResults.length > 0 ? `
 ### 参考文献
-- [タイトル1](URL1)
-- [タイトル2](URL2)
+${citations.map(citation => `- [${citation.title || citation.domain || 'Webページ'}](${citation.url})`).join('\n')}
+${searchResults.length > 0 ? `
+### 検索で見つかったWebページ
+${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${result.domain}`).join('\n')}` : ''}
 ` : ''}`;
 
     // Create OpenAI chat completion
@@ -207,12 +126,15 @@ ${webSearchContent ? `
           content: `あなたは ${process.env.NEXT_PUBLIC_AI_NAME} です。ユーザーからの質問に対して日本語で丁寧に回答します。以下の指示に従ってください：
 
 1. 質問には会話の文脈を考慮しながら、正直かつ正確に答えてください。
-2. Web検索結果がある場合はそれを参考にしつつ、信頼性の高い情報を提供してください。
-3. Web検索結果がある場合は、回答の最後に「### 参考文献」という見出しを付け、その後に参照元を以下のMarkdown形式で列挙してください：
-   - [タイトルテキスト](URL)
-   - [タイトルテキスト](URL)
-4. 以前の会話内容と矛盾する情報を提供しないように注意してください。
-5. HTMLタグは一切使用せず、必ずMarkdown記法を使用してください。`
+2. Bing AI Projects Agent検索結果がある場合は、その内容を参考にして回答してください。
+3. Agentのレスポンスに既にURLや参考文献が含まれている場合は、重複して追加しないでください。
+4. AgentのレスポンスにURLや参考文献が含まれていない場合のみ、以下の形式でMarkdown形式のリストを追加してください：
+   - 「### 参考文献」セクション：回答で参照したURLを列挙
+   - 「### 検索で見つかったWebページ」セクション：検索で見つかったWebページのリスト
+5. URLは必ずMarkdown形式のリンクとして表示してください：[タイトル](URL)
+6. 以前の会話内容と矛盾する情報を提供しないように注意してください。
+7. HTMLタグは一切使用せず、必ずMarkdown記法を使用してください。
+8. Agentのレスポンスをそのまま活用し、不要な重複を避けてください。`
         },
         ...topHistory,
         {
@@ -227,12 +149,12 @@ ${webSearchContent ? `
     });
 
     // Stream the response
-    const stream = OpenAIStream(response, {
+    const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         await chatHistory.addMessage({
           content: completion,
           role: "assistant"
-        });
+        } as any);
       }
     });
 
@@ -247,13 +169,5 @@ ${webSearchContent ? `
         statusText: error instanceof Error ? error.toString() : "Unknown Error"
       }
     );
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (error) {
-        console.error('Error closing browser:', error);
-      }
-    }
   }
 };
