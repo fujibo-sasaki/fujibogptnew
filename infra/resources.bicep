@@ -301,7 +301,8 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
 }
 
 resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
-  name: '${cosmosDbAccount.name}/${databaseName}'
+  parent: cosmosDbAccount
+  name: databaseName
   properties: {
     resource: {
       id: databaseName
@@ -310,7 +311,8 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15
 }
 
 resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = {
-  name: '${database.name}/${containerName}'
+  parent: database
+  name: containerName
   properties: {
     resource: {
       id: containerName
@@ -372,7 +374,6 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
   name: deployment.name
   properties: {
     model: deployment.model
-    raiPolicyName: contains(deployment, 'raiPolicyName') ? deployment.raiPolicyName : null
   }
   sku: contains(deployment, 'sku') ? deployment.sku : {
     name: 'Standard'
