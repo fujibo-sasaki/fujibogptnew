@@ -10,6 +10,11 @@ on:
       - main
       - master
 
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
 jobs:
   build:
 
@@ -36,3 +41,5 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
