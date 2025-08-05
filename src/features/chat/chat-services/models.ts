@@ -21,7 +21,7 @@ export type ChatType = "simple" | "web" | "document" | "data" | "doc" | "mssql";
 export type ChatAPIModel = "Current_Version" | "Preview_Version";
 export type ChatDoc = "DeptA" | "DeptB" | "DeptC" | "DeptD" | "";
 export type ChatAuth = "Excective" | "Manager" | "Employee" | "Contract";
-export type ChatRole = "system" | "user" | "assistant" | "function";
+export type ChatRole = "system" | "user" | "assistant" | "function" | "data" | "tool";
 
 export interface ChatThreadModel {
   id: string;
