@@ -157,7 +157,7 @@ ${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${r
 
     // Stream the response
     const stream = OpenAIStream(response as any, {
-      async onCompletion(completion) {
+      async onCompletion(completion: string) {
         await chatHistory.addMessage({
           id: "assistant-" + Date.now(),
           content: completion,

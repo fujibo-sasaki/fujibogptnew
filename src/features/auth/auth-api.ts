@@ -1,9 +1,10 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
-import { Provider } from "next-auth/providers";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { hashValue } from "./helpers";
+
+type Provider = any;
 
 const configureIdentityProvider = () => {
   const providers: Array<Provider> = [];
@@ -18,11 +19,11 @@ const configureIdentityProvider = () => {
         async profile(profile) {
           const newProfile = {
             ...profile,
-            isAdmin: adminEmails?.includes(profile.email.toLowerCase())
+            isAdmin: adminEmails?.includes(profile.email?.toLowerCase() || '')
           }
-          return newProfile;
+          return newProfile as any;
         }
-      })
+      }) as any
     );
   }
 
@@ -45,9 +46,9 @@ const configureIdentityProvider = () => {
             //isAdmin: adminEmails?.includes(profile.email.toLowerCase()) || adminEmails?.includes(profile.preferred_username.toLowerCase())
             isAdmin: adminEmails?.includes(profile.preferred_username.toLowerCase())
           }
-          return newProfile;
+          return newProfile as any;
         }
-      })
+      }) as any
     );
   }
 
