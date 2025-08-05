@@ -375,9 +375,9 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
   properties: {
     model: deployment.model
   }
-  sku: contains(deployment, 'sku') ? deployment.sku : {
+  sku: contains(deployment, 'sku') && contains(deployment.sku, 'name') ? deployment.sku : {
     name: 'Standard'
-    capacity: deployment.capacity
+    capacity: contains(deployment, 'capacity') ? (contains(deployment, 'capacity') ? deployment.capacity : 1) : 1
   }
 }]
 

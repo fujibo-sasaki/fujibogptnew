@@ -5,10 +5,11 @@ import {
 import {
   ChatMessageModel,
   MESSAGE_ATTRIBUTE,
+  ChatRole,
 } from "@/features/chat/chat-services/models";
 import { CosmosDBContainer } from "@/features/common/cosmos";
 import { uniqueId } from "@/features/common/util";
-import { ChatCompletionMessage } from "openai/resources";
+import { Message } from "ai";
 
 export interface CosmosDBChatMessageHistoryFields {
   sessionId: string;
@@ -24,7 +25,7 @@ export class CosmosDBChatMessageHistory {
     this.userId = userId;
   }
 
-  async getMessages(): Promise<ChatCompletionMessage[]> {
+  async getMessages(): Promise<Message[]> {
     const chats = await FindAllChats(this.sessionId);
     return mapOpenAIChatMessages(chats);
   }
@@ -34,14 +35,14 @@ export class CosmosDBChatMessageHistory {
     await container.delete();
   }
 
-  async addMessage(message: ChatCompletionMessage, citations: string = "") {
+  async addMessage(message: Message, citations: string = "") {
     const modelToSave: ChatMessageModel = {
       id: uniqueId(),
       createdAt: new Date(),
       type: MESSAGE_ATTRIBUTE,
       isDeleted: false,
       content: message.content ?? "",
-      role: message.role,
+      role: message.role as ChatRole,
       threadId: this.sessionId,
       userId: this.userId,
       context: citations,
@@ -53,11 +54,11 @@ export class CosmosDBChatMessageHistory {
 
 function mapOpenAIChatMessages(
   messages: ChatMessageModel[]
-): ChatCompletionMessage[] {
+): Message[] {
   return messages.map((message) => {
     return {
-      role: message.role,
+      role: message.role as any,
       content: message.content,
-    };
+    } as any;
   });
 }

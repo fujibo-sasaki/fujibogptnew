@@ -37,7 +37,10 @@ export const ChatAPIWeb = async (props: PromptGPTProps) => {
 4. 検索クエリはシンプルで簡潔にしてください
 5. 検索クエリのみを出力してください（説明は不要です）`
         },
-        ...topHistory,
+        ...topHistory.map(msg => ({
+          role: msg.role as any,
+          content: msg.content
+        })),
         {
           role: "user",
           content: `これまでの会話履歴と最新の質問から、最適な検索クエリを生成してください。
@@ -92,9 +95,10 @@ Web検索でエラーが発生しました。既存の知識ベースに基づ�
 
     // Add user message to chat history
     await chatHistory.addMessage({
+      id: "user-" + Date.now(),
       content: lastHumanMessage.content,
       role: "user"
-    } as any);
+    });
 
     // Construct prompt
     const prompt = `
@@ -136,7 +140,10 @@ ${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${r
 7. HTMLタグは一切使用せず、必ずMarkdown記法を使用してください。
 8. Agentのレスポンスをそのまま活用し、不要な重複を避けてください。`
         },
-        ...topHistory,
+        ...topHistory.map(msg => ({
+          role: msg.role as any,
+          content: msg.content
+        })),
         {
           role: "user",
           content: prompt
@@ -152,9 +159,10 @@ ${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${r
     const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         await chatHistory.addMessage({
+          id: "assistant-" + Date.now(),
           content: completion,
           role: "assistant"
-        } as any);
+        });
       }
     });
 

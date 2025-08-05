@@ -140,7 +140,10 @@ ${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${r
           role: "system",
           content: SYSTEM_PROMPT
         },
-        ...topHistory,
+        ...topHistory.map(msg => ({
+          role: msg.role as any,
+          content: msg.content
+        })),
         {
           role: "user",
           content: prompt
@@ -156,9 +159,10 @@ ${searchResults.map((result, index) => `- [${result.title}](${result.url}) - ${r
     const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         await chatHistory.addMessage({
+          id: "assistant-" + Date.now(),
           content: completion,
           role: "assistant"
-        } as any);
+        });
       }
     });
 

@@ -155,7 +155,10 @@ export const ChatAPIData = async (props: PromptGPTProps) => {
           role: "system",
           content: SYSTEM_PROMPT,
         },
-        ...topHistory,
+        ...topHistory.map(msg => ({
+          role: msg.role as any,
+          content: msg.content
+        })),
         {
           role: "user",
           content: CONTEXT_PROMPT({
@@ -176,15 +179,17 @@ export const ChatAPIData = async (props: PromptGPTProps) => {
     const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         await chatHistory.addMessage({
+          id: "user-" + Date.now(),
           content: lastHumanMessage.content,
           role: "user",
-        } as any);
+        });
 
         await chatHistory.addMessage(
           {
+            id: "assistant-" + Date.now(),
             content: completion,
             role: "assistant",
-          } as any,
+          },
           context
         );
       },

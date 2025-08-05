@@ -1,6 +1,6 @@
 import { userHashedId } from "@/features/auth/helpers";
 import { AI_NAME } from "@/features/theme/customise";
-import { OpenAIStream, StreamingTextResponse } from "ai";
+import { OpenAIStream, StreamingTextResponse, Message } from "ai";
 import { initAndGuardChatSession } from "./chat-thread-service";
 import { CosmosDBChatMessageHistory } from "./cosmosdb/cosmosdb";
 import { PromptGPTProps } from "./models";
@@ -14,10 +14,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
     userId: userId,
   });
 
-  await chatHistory.addMessage({
-    content: lastHumanMessage.content,
-    role: "user",
-  });
+  await chatHistory.addMessage(lastHumanMessage);
 
   const history = await chatHistory.getMessages();
   const topHistory = history.slice(history.length - 30, history.length);
@@ -90,6 +87,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
           
           // 履歴に画像生成結果を追加
           await chatHistory.addMessage({
+            id: "image-" + Date.now(),
             content: imageCompletion,
             role: "assistant",
           });
@@ -115,6 +113,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
         
         // 履歴にエラーメッセージを追加
         await chatHistory.addMessage({
+          id: "error-" + Date.now(),
           content: errorMessage,
           role: "assistant",
         });
@@ -164,15 +163,19 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
     const response = await chatClient.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        ...topHistory,
+        ...topHistory.map(msg => ({
+          role: msg.role as any,
+          content: msg.content
+        })),
       ],
       model: chatDeploymentName, // TypeScriptの型チェックのために必要
       stream: true,
     });
 
-    const stream = OpenAIStream(response, {
+    const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         await chatHistory.addMessage({
+          id: "completion-" + Date.now(),
           content: completion,
           role: "assistant",
         });
